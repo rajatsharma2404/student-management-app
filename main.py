@@ -7,7 +7,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from datetime import datetime
 
+class DatabaseConnection:
+    def __init__(self, db_file = "database.db"):
+        self.database_file = db_file
 
+    def connect(self):
+        connection = sqlite3.connect(self.database_file)
+        return connection
 class MainMethod(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -69,7 +75,7 @@ class MainMethod(QMainWindow):
         self.statusBar.addWidget(edit_button)
         self.statusBar.addWidget(delete_button)
     def load_data(self):
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         data = connection.execute("SELECT * FROM students")
         self.table.setRowCount(0)
         for row_number, row_data in enumerate(data):
@@ -136,18 +142,20 @@ class InsertDialog(QDialog):
 
         self.setLayout(layout)
 
+
     def add_student(self):
         name = self.name.text()
         mobile = self.mobile.text()
         course = self.course.itemText(self.course.currentIndex())
 
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("INSERT INTO students (name, course, mobile) VALUES (?, ?, ?)", (name, course, mobile))
         connection.commit()
         cursor.close()
         connection.close()
         main.load_data()
+        self.accept()
 
 
 class SearchDialog(QDialog):
@@ -222,7 +230,7 @@ class EditDialog(QDialog):
         self.student_id = main.table.item(index, 0).text()
 
     def update(self):
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("Update students SET name = ?,  course = ?, mobile = ? Where id = ?",
                        (self.name.text(), self.course.currentText(), self.mobile.text(), self.student_id))
